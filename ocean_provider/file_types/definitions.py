@@ -4,14 +4,17 @@ import json
 import logging
 import mimetypes
 import os
+import quopri
+import re
+import urllib.parse
 from abc import abstractmethod
-from cgi import parse_header
 from typing import Protocol, Tuple
 from urllib.parse import urlparse
 
 import requests
 from enforce_typing import enforce_types
 from flask import Response
+
 from ocean_provider.utils.url import is_safe_url
 
 logger = logging.getLogger(__name__)
@@ -187,6 +190,48 @@ class EndUrlType:
 
         return self.userdata
 
+    def _decode_content_disposition_filename(
+        self, content_disposition_header: str
+    ) -> str:
+        """
+        Safely extract and decode filename from a Content-Disposition header.
+        Supports RFC 5987 (filename*=UTF-8'') and legacy MIME encoded filenames.
+        """
+        if not content_disposition_header:
+            return "downloaded_file"
+
+        filename = None
+        filename_star = None
+
+        # Split by ';' and look for both filename and filename*
+        for part in content_disposition_header.split(";"):
+            part = part.strip()
+            if part.lower().startswith("filename*="):
+                filename_star = part.split("=", 1)[1].strip().strip('"')
+            elif part.lower().startswith("filename="):
+                filename = part.split("=", 1)[1].strip().strip('"')
+
+        # Prefer RFC 5987 (filename*) if present
+        if filename_star:
+            # format: UTF-8''encoded_filename
+            if "''" in filename_star:
+                encoding, _, encoded_name = filename_star.partition("''")
+                try:
+                    return urllib.parse.unquote(
+                        encoded_name, encoding=encoding or "utf-8"
+                    )
+                except LookupError:
+                    return urllib.parse.unquote(encoded_name)
+            return urllib.parse.unquote(filename_star)
+
+        # Decode legacy MIME form: =?UTF-8?Q?...?=
+        if filename and re.match(r"=\?utf-8\?q\?.*\?=", filename, re.IGNORECASE):
+            inner = filename[10:-2]  # remove =?UTF-8?Q? and ?=
+            return quopri.decodestring(inner).decode("utf-8", "replace")
+
+        # Fallback
+        return filename or "downloaded_file"
+
     def build_download_response(
         self,
         request,
@@ -222,12 +267,9 @@ class EndUrlType:
 
                 content_disposition_header = response.headers.get("content-disposition")
                 if content_disposition_header:
-                    _, content_disposition_params = parse_header(
+                    filename = self._decode_content_disposition_filename(
                         content_disposition_header
                     )
-                    content_filename = content_disposition_params.get("filename")
-                    if content_filename:
-                        filename = content_filename
 
                 content_type_header = response.headers.get("content-type")
                 if content_type_header:
