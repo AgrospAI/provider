@@ -77,10 +77,12 @@ servedocs: docs ## compile the docs watching for changes
 release: dist ## package and upload a release
 	twine upload dist/*
 
-dist: clean ## builds source and wheel package
-	python setup.py sdist
-	python setup.py bdist_wheel
+dist: clean ## builds source and wheel package (PEP 517/518)
+	# Use the PEP 517 build front-end which respects pyproject.toml
+	# Requires the 'build' package: pip install build
+	python -m build
 	ls -l dist
 
 install: clean ## install the package to the active Python's site-packages
-	python setup.py install
+	# Install via pip so projects without setup.py (pyproject.toml) are supported
+	python -m pip install .

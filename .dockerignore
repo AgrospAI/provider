@@ -1,3 +1,4 @@
 provider-py.egg-info
 .eggs
 .tox
+.venv

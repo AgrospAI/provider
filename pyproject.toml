@@ -1,0 +1,106 @@
+
+[project]
+name = "ocean-provider"
+version = "2.1.6"
+description = "🐳 Ocean Provider."
+keywords = ["ocean-provider"]
+readme = "README.md"
+authors = [
+    {name = "leucothia", email = "devops@oceanprotocol.com"},
+]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3.8",
+]
+dependencies = [
+    "Flask-Cors==3.0.9",
+    "Flask-RESTful==0.3.8",
+    "Flask==2.1.2",
+    "Jinja2>=2.10.1,<3.1",
+    "SQLAlchemy==1.3.23",
+    "Werkzeug==2.0.3",
+    "coincurve>=13,<15",
+    "coloredlogs==15.0.1",
+    "dnspython==2.2.1",
+    "eciespy==0.3.11",
+    "enforce-typing==1.0.0.post1",
+    "flask-sieve==1.3.1",
+    "flask-swagger-ui==3.25.0",
+    "flask-swagger==0.2.14",
+    "flask_caching==1.10.1",
+    "gunicorn==20.0.4",
+    "ipaddress==1.0.23",
+    "ocean-contracts==2.0.2",
+    "pyjwt==2.4.0",
+    "pysha3==1.0.2",
+    "redis==4.5.4",
+    "web3==5.25.0",
+    "python-dotenv>=0.15.0",
+    "pytest>=7.1.2",
+]
+license = {text = "Apache Software License 2.0"}
+requires-python = ">=3.8"
+
+[project.urls]
+Homepage = "https://github.com/oceanprotocol/provider-py"
+
+[project.optional-dependencies]
+test = [
+    "codacy-coverage==1.3.11",
+    "coverage==6.4.4",
+    "docker==6.0.0",
+    "freezegun==1.1.0",
+    "mccabe==0.7.0",
+    "pytest-env==0.6.2",
+    "pytest==7.1.2",
+    "requests_testadapter==0.3.0",
+]
+dev = [
+    "black==22.6.0",
+    "bumpversion==0.6.0",
+    "codacy-coverage==1.3.11",
+    "coverage==6.4.4",
+    "docker==6.0.0",
+    "flake8==5.0.4",
+    "freezegun==1.1.0",
+    "isort==5.10.1",
+    "licenseheaders==0.8.8",
+    "mccabe==0.7.0",
+    "pkginfo",
+    "pre-commit==2.20.0",
+    "pytest-env==0.6.2",
+    "pytest==7.1.2",
+    "python-dotenv==0.15.0",
+    "requests_testadapter==0.3.0",
+    "twine",
+]
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[tool.uv]
+prerelease = "allow"
+
+[tool.pytest.ini_options]
+# Ignore the old setup.py when collecting tests
+collect_ignore = ["setup.py"]
+
+[tool.isort]
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+line_length = 88
+
+[tool.flake8]
+max-line-length = 8888888888
+ignore = ["E203", "W503"]
+
+[tool.bdist_wheel]
+# Keep legacy universal-wheel intent from setup.cfg: universal = 1
+universal = true
