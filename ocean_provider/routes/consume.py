@@ -86,7 +86,7 @@ def nonce():
 
     logger.info(f"nonce for user {address} is {nonce}")
 
-    response = jsonify(nonce=Decimal(nonce)), 200
+    response = jsonify(nonce=nonce), 200
     logger.info(f"nonce response = {response}")
 
     return response

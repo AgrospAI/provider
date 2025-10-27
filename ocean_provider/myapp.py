@@ -21,7 +21,7 @@ with engine.connect() as con:
         """
         CREATE TABLE IF NOT EXISTS user_nonce (
           address VARCHAR(255) NOT NULL,
-          nonce VARCHAR(255) NOT NULL,
+          nonce INTEGER NOT NULL,
           PRIMARY KEY (address)
         )
         """
