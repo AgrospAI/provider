@@ -2,13 +2,10 @@
 ## Copyright 2023 Ocean Protocol Foundation
 ## SPDX-License-Identifier: Apache-2.0
 ##
-version: '3'
 services:
   ocean-provider:
-    image: oceanprotocol/provider-py:local
+    build: .
     ports:
       - 8030:8030
-    env_file:
-      - ${PROVIDER_ENV_FILE}
     volumes:
       - ${ARTIFACTS_FOLDER}:/usr/local/:ro

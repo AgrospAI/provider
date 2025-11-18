@@ -3,7 +3,7 @@
 ## SPDX-License-Identifier: Apache-2.0
 ##
 # ===== Builder Stage =====
-FROM python:3.8-bookworm AS builder
+FROM python:3.9-bookworm AS builder
 
 ENV PYTHONUNBUFFERED=1
 WORKDIR /ocean-provider
@@ -27,7 +27,7 @@ RUN uv sync --frozen --no-install-project
 COPY . .
 
 # ===== Runtime Stage =====
-FROM python:3.8-slim-bookworm
+FROM python:3.9-bookworm
 
 WORKDIR /ocean-provider
 
