@@ -11,4 +11,4 @@ export LOG_LEVEL=DEBUG
 # Start Flask server
 export FLASK_ENV=development
 export FLASK_APP=ocean_provider/run.py
-flask run --port=8030
+uv run flask run --port=8030
