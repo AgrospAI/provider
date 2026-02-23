@@ -468,46 +468,45 @@ class InputItemValidator:
         if not trusted_algorithms and not trusted_publishers:
             return True
 
+        trusted_publishers = [addr.lower() for addr in trusted_publishers]
+        algorithm_did = algorithm_did.lower()
+
         if trusted_publishers:
             algo_ddo = get_asset_from_metadatastore(get_metadata_url(), algorithm_did)
-            if algo_ddo.nft["owner"] not in trusted_publishers:
-                self.message = "not_trusted_algo_publisher"
-                return False
+            owner = algo_ddo.nft["owner"].lower()
+            if owner in trusted_publishers:
+                return True
 
         if trusted_algorithms:
-            try:
-                did_to_trusted_algo_dict = {
-                    algo["did"]: algo for algo in trusted_algorithms
-                }
-                if algorithm_did not in did_to_trusted_algo_dict:
-                    self.message = "not_trusted_algo"
+            did_to_trusted_algo_dict = {
+                algo["did"].lower(): algo for algo in trusted_algorithms
+            }
+
+            if algorithm_did in did_to_trusted_algo_dict:
+                trusted_algo_dict = did_to_trusted_algo_dict[algorithm_did]
+                allowed_files_checksum = trusted_algo_dict.get("filesChecksum")
+                allowed_container_checksum = trusted_algo_dict.get(
+                    "containerSectionChecksum"
+                )
+
+                if (
+                    allowed_files_checksum
+                    and self.algo_files_checksum != allowed_files_checksum.lower()
+                ):
+                    self.message = "algorithm_file_checksum_mismatch"
                     return False
 
-            except KeyError:
-                self.message = "no_publisherTrustedAlgorithms"
-                return False
+                if (
+                    allowed_container_checksum
+                    and self.algo_container_checksum != allowed_container_checksum
+                ):
+                    self.message = "algorithm_container_checksum_mismatch"
+                    return False
 
-            trusted_algo_dict = did_to_trusted_algo_dict[algorithm_did]
-            allowed_files_checksum = trusted_algo_dict.get("filesChecksum")
-            allowed_container_checksum = trusted_algo_dict.get(
-                "containerSectionChecksum"
-            )
+                return True
 
-            if (
-                allowed_files_checksum
-                and self.algo_files_checksum != allowed_files_checksum.lower()
-            ):
-                self.message = "algorithm_file_checksum_mismatch"
-                return False
-
-            if (
-                allowed_container_checksum
-                and self.algo_container_checksum != allowed_container_checksum
-            ):
-                self.message = "algorithm_container_checksum_mismatch"
-                return False
-
-        return True
+        self.message = "not_trusted_algo"
+        return False
 
     def validate_algo(self):
         """Validates algorithm details that allow the algo dict to be built."""
