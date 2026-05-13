@@ -46,17 +46,19 @@ def update_nonce(address, nonce_value):
     :param: nonce_value
     """
     if nonce_value is None:
-        logger.debug(f"Nonce value is not provided.")
+        logger.debug("Nonce value is not provided.")
         return
 
-    logger.debug(f"Received nonce value: {nonce_value}")
+    logger.debug("Received nonce value: %d", nonce_value)
 
     if os.getenv("REDIS_CONNECTION"):
         cache.set(address, nonce_value)
 
         return
 
-    nonce_object = models.UserNonce.query.filter_by(address=address).first()
+    nonce_object = (
+        models.UserNonce.query.filter_by(address=address).with_for_update().first()
+    )
     if nonce_object is None:
         nonce_object = models.UserNonce(address=address, nonce=nonce_value)
     else:
@@ -67,7 +69,7 @@ def update_nonce(address, nonce_value):
 
         nonce_object.nonce = nonce_value
 
-    logger.debug(f"Wallet address: {address}, new nonce {nonce_object.nonce}")
+    logger.debug("Wallet address: %s, new nonce %s", address, nonce_object.nonce)
 
     try:
         db.add(nonce_object)
