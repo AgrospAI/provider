@@ -56,24 +56,25 @@ def update_nonce(address, nonce_value):
 
         return
 
-    nonce_object = (
-        models.UserNonce.query.filter_by(address=address).with_for_update().first()
-    )
-    if nonce_object is None:
-        nonce_object = models.UserNonce(address=address, nonce=nonce_value)
-    else:
-        if nonce_object.nonce == nonce_value:
-            msg = f"Cannot create duplicates in the database.\n Existing nonce: {nonce_object.nonce} vs. new nonce: {nonce_value}"
-            logger.debug(msg)
-            raise sqlite3.IntegrityError(msg)
-
-        nonce_object.nonce = nonce_value
-
-    logger.debug("Wallet address: %s, new nonce %s", address, nonce_object.nonce)
-
     try:
-        db.add(nonce_object)
+        result = db.execute(
+            """
+            INSERT INTO user_nonce (address, nonce)
+            VALUES (:address, :nonce)
+            ON CONFLICT(address)
+            DO UPDATE SET nonce = excluded.nonce
+            WHERE excluded.nonce > user_nonce.nonce
+            """,
+            {"address": address, "nonce": nonce_value},
+        )
         db.commit()
+
+        if result.rowcount == 0:
+            logger.debug(
+                "Nonce not updated: existing nonce >= %d for %s",
+                nonce_value,
+                address,
+            )
     except Exception:
         db.rollback()
         logger.exception("Database update failed.")
