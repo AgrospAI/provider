@@ -49,7 +49,7 @@ def update_nonce(address, nonce_value):
         logger.debug("Nonce value is not provided.")
         return
 
-    logger.debug("Received nonce value: %d", nonce_value)
+    logger.debug("Received nonce value: %s", nonce_value)
 
     if os.getenv("REDIS_CONNECTION"):
         cache.set(address, nonce_value)
@@ -71,7 +71,7 @@ def update_nonce(address, nonce_value):
 
         if result.rowcount == 0:
             logger.debug(
-                "Nonce not updated: existing nonce >= %d for %s",
+                "Nonce not updated: existing nonce >= %s for %s",
                 nonce_value,
                 address,
             )
