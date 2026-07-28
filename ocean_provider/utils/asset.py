@@ -4,9 +4,12 @@
 #
 import copy
 import logging
+import time
 from typing import Optional
 
 import requests
+
+from ocean_provider.http_provider import get_session
 from ocean_provider.utils.basics import get_web3
 from ocean_provider.utils.consumable import ConsumableCodes
 from ocean_provider.utils.credentials import AddressCredential
@@ -87,12 +90,32 @@ class Asset:
         return ConsumableCodes.OK
 
 
-def get_asset_from_metadatastore(metadata_url, document_id) -> Optional[Asset]:
+def get_asset_from_metadatastore(
+    metadata_url, document_id, retries=3, timeout=10
+) -> Optional[Asset]:
     """
     :return: `Asset` instance or None
     """
     url = f"{metadata_url}/api/aquarius/assets/ddo/{document_id}"
-    response = requests.get(url)
+    session = get_session()
+
+    for attempt in range(retries):
+        try:
+            response = session.get(url, timeout=timeout)
+            break
+        except requests.exceptions.RequestException as e:
+            if attempt == retries - 1:
+                logger.warning(
+                    "Failed to fetch asset %s from %s after %d attempts: %s",
+                    document_id,
+                    metadata_url,
+                    retries,
+                    e,
+                )
+                return None
+            time.sleep(0.5 * (2**attempt))
+    else:
+        return None
 
     return Asset(response.json()) if response.status_code == 200 else None
 

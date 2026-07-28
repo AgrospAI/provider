@@ -6,11 +6,12 @@ from typing import Any, Dict
 
 import lru
 import requests
-from ocean_provider.version import get_version
-from requests.adapters import HTTPAdapter
+from requests.adapters import HTTPAdapter, Retry
 from requests.sessions import Session
 from web3 import HTTPProvider
 from web3._utils.caching import generate_cache_key
+
+from ocean_provider.version import get_version
 
 
 def _remove_session(key: str, session: Session) -> None:
@@ -33,7 +34,7 @@ class CustomHTTPProvider(HTTPProvider):
         )
         response = self.decode_rpc_response(raw_response)
         self.logger.debug(
-            "Getting response HTTP. URI: %s, " "Method: %s, Response: %s",
+            "Getting response HTTP. URI: %s, Method: %s, Response: %s",
             self.endpoint_uri,
             method,
             response,
@@ -52,25 +53,34 @@ def make_post_request(endpoint_uri: str, data: bytes, *args, **kwargs) -> bytes:
     else:
         kwargs["headers"] = version_header
 
-    session = _get_session(endpoint_uri)
+    session = get_session(endpoint_uri)
     response = session.post(endpoint_uri, data=data, *args, **kwargs)
     response.raise_for_status()
 
     return response.content
 
 
-def _get_session(*args, **kwargs) -> Session:
+def get_session(*args, **kwargs) -> Session:
     cache_key = generate_cache_key((args, kwargs))
     if cache_key not in _session_cache:
-        # This is the main change from original Web3 `_get_session`
         session = requests.sessions.Session()
-        session.mount(
-            "http://",
-            HTTPAdapter(pool_connections=25, pool_maxsize=25, pool_block=True),
+
+        retries = Retry(
+            total=3,
+            backoff_factor=0.5,
+            status_forcelist=[502, 503, 504],
+            allowed_methods=["GET"],
         )
-        session.mount(
-            "https://",
-            HTTPAdapter(pool_connections=25, pool_maxsize=25, pool_block=True),
+
+        adapter = HTTPAdapter(
+            pool_connections=25,
+            pool_maxsize=25,
+            pool_block=True,
+            max_retries=retries,
         )
+
+        session.mount("http://", adapter)
+        session.mount("https://", adapter)
+
         _session_cache[cache_key] = session
     return _session_cache[cache_key]
